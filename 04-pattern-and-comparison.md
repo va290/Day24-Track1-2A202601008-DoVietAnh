@@ -20,22 +20,37 @@ Nhìn **CNET** (lỗi có kiểm soát của tổ chức uy tín) cạnh **Amazo
 **Guardrail ngành cần nhất** (vì **không có gatekeeper tập trung**):
 gắn **nhãn AI/provenance** · **xác thực authorship** · **fact-check & kiểm đạo văn** trước xuất bản · **rate-limit** sản xuất (Amazon đã làm: 3 sách/ngày) · cơ chế **khiếu nại/gỡ nhanh** & bảo vệ danh tính.
 
-## B. Bảng so sánh risk profile giữa các ngành (template — điền trên lớp)
-> Bảng này **chỉ có số liệu sau khi từng thành viên trình bày case của họ**. Tôi chỉ điền sẵn **dòng của mình** (Content creator); các dòng khác để trống, cả bàn cùng điền & chốt trực tiếp.
+## B. Bảng so sánh risk profile giữa các ngành (số liệu thật từ 3 thành viên)
+> Mỗi thành viên trình bày 1 ngành; bảng dưới tổng hợp **sau khi cả bàn trình bày**.
 
-| Ngành | Harm dễ gặp nhất | Failure mode hay lặp | Layer hay bắt đầu lỗi | Risk profile tổng thể | Vì sao? |
-|---|---|---|---|---|---|
-| **Content creator** *(của tôi)* | Misinformation + Dignity loss (mạo danh); spike Injury ở ngách | Hallucination · Misuse/synthetic · Over-reliance | **Grounding + UX** | **Medium–High** (harm by volume) | Severity/ca thấp nhưng Scale×Frequency khổng lồ; không có gatekeeper |
-| HR / tuyển dụng | — điền trên lớp — | — | — | — | — |
-| Giáo dục / AI tutor | — điền trên lớp — | — | — | — | — |
-| Y tế / health assistant | — điền trên lớp — | — | — | — | — |
-| Mobility / autonomous | — điền trên lớp — | — | — | — | — |
-| Media / political · … | — điền trên lớp — | — | — | — | — |
+| Ngành | Người trình bày | Harm dễ gặp nhất | Failure mode hay lặp | Layer hay khởi lỗi | Risk profile | Đặc trưng |
+|---|---|---|---|---|---|---|
+| **Content creator** | Đỗ Việt Anh | Misinfo + Dignity loss (mạo danh); spike Injury ở ngách | Hallucination · Misuse/synthetic · Over-reliance | Grounding + UX | **Medium–High** | harm by **volume** |
+| **Y tế / health assistant** | (thành viên) | **Injury** (tử vong) | Harmful advice · Escalation failure · Over-reliance | Safety · Grounding · Model | **Critical** | harm by **severity** |
+| **Media / news / political** | Nguyễn Viết Du | Misinformation + Dignity loss | Misuse/jailbreak (deepfake) · Hallucination | Safety · Grounding (UX khuếch đại) | **High** | harm by **scale** |
 
-## C. Câu hỏi để cả bàn chốt (sau khi mọi người trình bày)
-- Ngành nào **Severity** cao nhất?
-- Ngành nào **Scale / Frequency** lớn nhất?
-- Ngành nào cần **human-in-the-loop** rõ nhất?
-- Ngành nào cần **bar "được ship"** cao nhất?
+**Case tiêu biểu mỗi ngành:**
+- **Content creator:** CNET (đính chính 41/77 bài) · Amazon AI slop (mạo danh Jane Friedman + foraging guide "life or death" → giới hạn 3 sách/ngày)
+- **Y tế:** NEDA *Tessa* (gỡ sau vài ngày vì khuyên giảm cân) · Epic Sepsis Model (bỏ sót **67%** ca thật, báo sai **88%**) · Babylon Health (sót nhồi máu cơ tim → phá sản 2023)
+- **Media:** Deepfake robocall Biden (FCC phạt **$6M**) · Deepfake bầu cử Slovakia (**>130k** view trong **48h**) · CNET
 
-> **Giả thuyết của tôi (để kiểm chứng khi so sánh):** Content creator/Media nghiêng *harm by volume* (rộng & nông, đôi khi spike Critical); Y tế/Mobility nghiêng *harm by severity* (hẹp & sâu). Cần số liệu của các bạn để xác nhận.
+## C. Tổng hợp — risk profile giữa các ngành
+
+**3 pattern xuyên ngành:**
+1. **Trục Severity ⟷ Scale chia ngành làm 2 nhóm:**
+   - **Y tế = harm by severity** — Critical, Injury/tử vong, *hẹp & sâu* → bắt buộc human-in-the-loop, bar "được ship" cao nhất, dữ liệu PHI cực nhạy cảm.
+   - **Content creator & Media = harm by volume/scale** — *rộng & nông*, severity/ca thấp hơn nhưng blast radius khổng lồ.
+2. **Intent của lỗi khác nhau:**
+   - Y tế: lỗi **vô ý** của hệ thống (harmful advice, escalation failure, model bỏ sót).
+   - Media: lỗi **cố ý** của actor xấu (deepfake / Misuse-jailbreak).
+   - Content creator: **pha trộn** — vô ý (CNET hallucination) + lạm dụng có chủ đích (Amazon mạo danh / slop kiếm tiền).
+3. **Layer chung hay khởi lỗi: Grounding** (cả 3 ngành); **Safety** nổi bật ở Y tế & Media; **UX** đóng vai khuếch đại (Content/Media).
+
+**Trả lời câu hỏi cả bàn:**
+- Severity cao nhất → **Y tế** (Critical/tử vong).
+- Scale / Frequency lớn nhất → **Content creator & Media** (slop + deepfake quy mô Internet/quốc gia).
+- Cần human-in-the-loop & bar "được ship" cao nhất → **Y tế**.
+- Dữ liệu nhạy cảm rõ nhất → **Y tế** (PHI).
+- Yếu tố ngoài bản thân AI quyết định mức nguy: **thời điểm** (Media — sát bầu cử) · **tốc độ hậu quả** (Y tế — sepsis tử vong nhanh) · **quy mô phát tán** (Content — SEO/marketplace).
+
+> **Quan sát:** **CNET xuất hiện ở cả 2 ngành** (Content creator của tôi & Media của Du) → ranh giới mờ giữa "publisher/content" và "media", và cả hai đều thuộc nhóm *harm by volume*. Giả thuyết ban đầu của tôi (volume vs severity) được **xác nhận** bằng số liệu 3 ngành.
