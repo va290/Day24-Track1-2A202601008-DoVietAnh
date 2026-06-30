@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 24 — Content Creator: AI Risk & Harm Map</title>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#161c24; --card:#1c242e; --line:#2a3340;
+    --ink:#e8edf2; --muted:#9aa7b4; --accent:#4f9d8c; --accent2:#e08a5b;
+    --low:#6b7785; --med:#d9a441; --high:#e0794a; --crit:#d4504e;
+    --purple:#7c74c4; --green:#4f9d8c; --orange:#e08a5b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+    background:var(--bg);color:var(--ink);display:flex;height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased}
+
+  /* Sidebar */
+  .sidebar{width:288px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);
+    display:flex;flex-direction:column;padding:22px 0}
+  .brand{padding:0 22px 18px;border-bottom:1px solid var(--line)}
+  .brand h1{font-size:15px;letter-spacing:.3px}
+  .brand .sub{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.5}
+  .toc{list-style:none;overflow-y:auto;padding:12px 12px;flex:1}
+  .toc li{padding:9px 14px;margin:2px 0;border-radius:8px;font-size:13px;color:var(--muted);
+    cursor:pointer;display:flex;gap:10px;align-items:center;transition:.15s;line-height:1.35}
+  .toc li:hover{background:#1f2731;color:var(--ink)}
+  .toc li.active{background:linear-gradient(90deg,rgba(79,157,140,.22),transparent);color:#fff;font-weight:600}
+  .toc li.active .num{background:var(--accent);color:#0f1419}
+  .toc .num{width:22px;height:22px;flex-shrink:0;border-radius:6px;background:#28313c;color:var(--muted);
+    display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+  .foot{padding:14px 22px 2px;font-size:11px;color:var(--muted);border-top:1px solid var(--line)}
+
+  /* Stage */
+  .stage{flex:1;display:flex;flex-direction:column;min-width:0}
+  .slidewrap{flex:1;overflow-y:auto;padding:52px 64px;display:flex}
+  .slide{display:none;width:100%;max-width:1000px;margin:auto;animation:fade .35s ease}
+  .slide.show{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  .kicker{font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:14px}
+  h2{font-size:30px;line-height:1.2;margin-bottom:8px;letter-spacing:-.4px}
+  .lead{font-size:15px;color:var(--muted);line-height:1.6;margin-bottom:26px;max-width:760px}
+  h3{font-size:14px;text-transform:uppercase;letter-spacing:1px;color:var(--accent2);margin:22px 0 12px}
+
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+  .card h4{font-size:14px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  .card p{font-size:13px;color:var(--muted);line-height:1.6}
+  .card .big{font-size:26px;font-weight:800;color:#fff;letter-spacing:-.5px}
+  .card ul{margin:6px 0 0 2px;list-style:none}
+  .card li{font-size:13px;color:var(--muted);line-height:1.65;padding-left:16px;position:relative}
+  .card li:before{content:"›";position:absolute;left:0;color:var(--accent)}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.5}
+  th{color:var(--accent2);font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+  td{color:var(--muted)}
+  td b,td strong{color:var(--ink)}
+  tr:last-child td{border-bottom:none}
+
+  .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;color:#0f1419}
+  .b-low{background:var(--low);color:#fff} .b-med{background:var(--med)}
+  .b-high{background:var(--high)} .b-crit{background:var(--crit);color:#fff}
+  .tag{display:inline-block;padding:3px 10px;border-radius:6px;font-size:12px;background:#28313c;color:var(--ink);margin:3px 4px 0 0}
+  .tag.p{background:rgba(124,116,196,.2);color:#b3aef0} .tag.g{background:rgba(79,157,140,.2);color:#86d6c4}
+  .tag.o{background:rgba(224,138,91,.2);color:#f0b496} .tag.r{background:rgba(212,80,78,.2);color:#f0a3a1}
+
+  .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 8px}
+  .flow .step{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 13px;font-size:12.5px;font-weight:600}
+  .flow .arrow{color:var(--accent);font-weight:700}
+  .src{font-size:11.5px;color:var(--muted);line-height:1.7;margin-top:4px}
+  .pill{display:inline-block;background:#28313c;border-radius:6px;padding:2px 8px;font-size:11px;color:var(--ink);font-family:ui-monospace,monospace}
+  .hl{color:#fff;font-weight:700}
+  .quote{border-left:3px solid var(--accent2);padding:8px 16px;font-style:italic;color:var(--ink);background:rgba(224,138,91,.07);border-radius:0 8px 8px 0;font-size:14px;line-height:1.6}
+
+  /* Nav */
+  .nav{height:64px;flex-shrink:0;border-top:1px solid var(--line);background:var(--panel);
+    display:flex;align-items:center;justify-content:space-between;padding:0 28px}
+  .nav button{background:var(--card);border:1px solid var(--line);color:var(--ink);font-size:14px;
+    padding:10px 20px;border-radius:9px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:8px;transition:.15s}
+  .nav button:hover:not(:disabled){background:var(--accent);color:#0f1419;border-color:var(--accent)}
+  .nav button:disabled{opacity:.35;cursor:not-allowed}
+  .counter{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .bar{position:absolute;top:0;left:288px;right:0;height:3px;background:var(--line)}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:.3s}
+  .stage{position:relative}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="brand">
+    <h1>AI Risk &amp; Harm Map</h1>
+    <div class="sub">Day 24 · Track 1 — AI Ethics · Safety · Responsible AI<br>Ngành: <b style="color:#86d6c4">Content Creator</b></div>
+  </div>
+  <ul class="toc" id="toc"></ul>
+  <div class="foot">Đỗ Việt Anh · 2A202601008</div>
+</aside>
+
+<main class="stage">
+  <div class="bar"><i id="bar"></i></div>
+  <div class="slidewrap">
+
+    <!-- 1 -->
+    <section class="slide show" data-title="Tiêu đề">
+      <div class="kicker">AI in Action · Day 24 · Track 1</div>
+      <h2>Khi nội dung AI tràn ra Internet:<br>Rủi ro của ngành Content Creator</h2>
+      <p class="lead">Phân tích 2 case study AI có thật bằng <b style="color:#e8edf2">Harm Map</b> — soi xem AI sai ở đâu, ai chịu hại, và nặng tới mức nào trước khi nó được đưa ra dùng.</p>
+      <div class="grid g3">
+        <div class="card"><h4>🏭 Case 1</h4><p><b class="hl">CNET</b> — tổ chức uy tín, có quy trình, vẫn fail vì <i>over-reliance</i>.</p></div>
+        <div class="card"><h4>🌊 Case 2</h4><p><b class="hl">Amazon AI slop</b> — rác ẩn danh, phi tập trung, quy mô marketplace.</p></div>
+        <div class="card"><h4>🎯 Khung</h4><p><span class="pill">MOMENT→MODE→LAYER→HARM→SEVERITY</span></p></div>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section class="slide" data-title="Bài này là gì">
+      <div class="kicker">Bối cảnh</div>
+      <h2>AI Safety không hỏi "máy giỏi không"</h2>
+      <p class="lead">Nó hỏi: hệ thống đi vào đời thật sẽ <b style="color:#e8edf2">ảnh hưởng đến ai, trong bối cảnh nào</b>, và ta có <b style="color:#e8edf2">đủ bằng chứng</b> để cho ra dùng chưa. Model chỉ là lõi nằm trong một hệ thống, nằm trong một bối cảnh sử dụng.</p>
+      <div class="grid g3">
+        <div class="card" style="border-top:3px solid var(--purple)"><h4>AI Ethics</h4><p>Tầng <b class="hl">giá trị</b> — la bàn.<br>Công bằng? Minh bạch? Tôn trọng quyền con người?</p></div>
+        <div class="card" style="border-top:3px solid var(--green)"><h4>Responsible AI</h4><p>Tầng <b class="hl">vận hành</b>.<br>Biến giá trị thành quy trình, vai trò, accountability, release criteria.</p></div>
+        <div class="card" style="border-top:3px solid var(--orange)"><h4>AI Safety Eval</h4><p>Tầng <b class="hl">kiểm tra</b>.<br>Fail ở đâu, harm gì? Threshold nào chặn launch? Safeguard nào bắt buộc?</p></div>
+      </div>
+      <p class="src" style="margin-top:18px">Bài lab: chọn 1 ngành → chấm risk profile → tìm 2–3 case AI <b>có thật, có số liệu, có nguồn</b> → mổ xẻ bằng Harm Map → so sánh giữa các ngành. <i>Không build hệ thống, không code.</i></p>
+    </section>
+
+    <!-- 3 -->
+    <section class="slide" data-title="Ngành Content Creator">
+      <div class="kicker">Phạm vi ngành</div>
+      <h2>Không phải toà soạn — mà là creator economy</h2>
+      <p class="lead">Cá nhân/kênh/seller dùng generative AI để <b style="color:#e8edf2">sản xuất nội dung hàng loạt</b> (bài viết, sách self-publish, ảnh, giọng, video) rồi đẩy lên marketplace/MXH. Harm tiêu biểu nhất hôm nay: <b style="color:#f0b496">AI slop</b> — nội dung rác AI tràn ngập Internet.</p>
+      <div class="grid g2">
+        <div class="card"><h4>Harm đặc trưng của ngành</h4><ul>
+          <li>Copyright / đạo văn</li><li>Misinformation lan truyền</li>
+          <li>Mạo danh & synthetic media (deepfake)</li><li>Reputation damage</li></ul></div>
+        <div class="card"><h4>Vì sao khó kiểm soát</h4><ul>
+          <li><b class="hl">Không có gatekeeper tập trung</b></li><li>Sản xuất cực rẻ, cực nhanh</li>
+          <li>Giao diện làm nội dung trông "chính thống"</li><li>SEO/thuật toán khuếch đại tới số đông</li></ul></div>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section class="slide" data-title="Industry Risk Snapshot">
+      <div class="kicker">Bước 1 · Industry Risk Snapshot</div>
+      <h2>Chấm risk profile mức ngành</h2>
+      <table>
+        <tr><th>Câu hỏi</th><th>Mức</th><th>Vì sao</th></tr>
+        <tr><td>AI sai → hại thể chất?</td><td><span class="badge b-med">Medium</span> <span class="badge b-crit">spike Crit</span></td><td>Đa số hại nhận thức; ngách foraging/sức khoẻ → ngộ độc</td></tr>
+        <tr><td>Ảnh hưởng quyết định hệ trọng?</td><td><span class="badge b-med">Medium</span></td><td>Định hình niềm tin công chúng + quyết định mua hàng</td></tr>
+        <tr><td>Động tới dữ liệu/quyền nhạy cảm?</td><td><span class="badge b-med">Medium</span></td><td>Bản quyền, quyền danh tính/hình ảnh/giọng nói</td></tr>
+        <tr><td>Hậu quả khó đảo ngược?</td><td><span class="badge b-med">Medium</span></td><td>Nội dung lan + index SEO khó thu hồi</td></tr>
+        <tr><td>Blast radius khi rộng?</td><td><span class="badge b-high">High</span></td><td>Slop ở quy mô Internet — trăm triệu interaction</td></tr>
+        <tr><td>Cần human review / escalation?</td><td><span class="badge b-high">High</span></td><td>Fact-check, xác thực authorship, gắn nhãn nguồn gốc</td></tr>
+        <tr><td><b>Risk profile tổng thể</b></td><td><span class="badge b-high">Medium–High</span></td><td><b>Harm by volume</b> (xem slide sau)</td></tr>
+      </table>
+    </section>
+
+    <!-- 5 -->
+    <section class="slide" data-title="Insight: Harm by Volume">
+      <div class="kicker">Insight cốt lõi</div>
+      <h2>"Harm by volume", không phải "harm by severity"</h2>
+      <p class="lead">Mỗi nội dung rác thường <b style="color:#e8edf2">severity thấp–trung bình</b>, nhưng <b style="color:#e8edf2">Scale × Frequency cực lớn</b> → tổng harm rất nặng. Đây là pattern <b>ngược</b> với Y tế/Mobility.</p>
+      <div class="grid g2">
+        <div class="card" style="border-left:3px solid var(--accent)"><h4>🌊 Content creator / Media</h4>
+          <p><b class="hl">Rộng &amp; nông</b> — severity/ca thấp, nhưng quy mô khổng lồ. Đôi khi <b style="color:#f0a3a1">spike Critical</b> ở ngách (foraging → ngộ độc).</p></div>
+        <div class="card" style="border-left:3px solid var(--crit)"><h4>🏥 Y tế / Mobility</h4>
+          <p><b class="hl">Hẹp &amp; sâu</b> — severity/ca cao (hại thể chất), nhưng scale thấp hơn. Cần bar "được ship" rất cao.</p></div>
+      </div>
+      <p class="src" style="margin-top:16px">→ Hệ quả: ngành này cần guardrail dạng <b>provenance/nhãn AI · xác thực authorship · rate-limit · fact-check</b>, không phải human-review từng ca như y tế.</p>
+    </section>
+
+    <!-- 6 -->
+    <section class="slide" data-title="Khung Harm Map">
+      <div class="kicker">Bước 2 · Cách đọc 1 dòng Harm Map</div>
+      <h2>MOMENT → MODE → LAYER → HARM → SEVERITY</h2>
+      <div class="flow">
+        <span class="step">MOMENT</span><span class="arrow">→</span>
+        <span class="step">MODE</span><span class="arrow">→</span>
+        <span class="step">LAYER</span><span class="arrow">→</span>
+        <span class="step">HARM</span><span class="arrow">→</span>
+        <span class="step">SEVERITY</span>
+      </div>
+      <p class="lead" style="margin:10px 0 18px">Chọn khoảnh khắc rủi ro → gọi tên kiểu lỗi → tìm lớp bắt đầu lỗi → viết hậu quả thật → chấm mức độ.</p>
+      <div class="grid g3">
+        <div class="card"><h4>8 Failure mode</h4><p>
+          <span class="tag p">Hallucination</span><span class="tag p">Bias</span><span class="tag p">Sycophancy</span>
+          <span class="tag p">Over-reliance</span><span class="tag p">Harmful advice</span><span class="tag p">Privacy leak</span>
+          <span class="tag p">Escalation failure</span><span class="tag p">Misuse/jailbreak</span></p></div>
+        <div class="card"><h4>4 Layer (debug)</h4><p>
+          <span class="tag g">UX</span><span class="tag g">Grounding</span><span class="tag g">Safety</span><span class="tag g">Model</span></p>
+          <p style="margin-top:8px">4 thước đo <b class="hl">độc lập</b>: Severity ≠ Scale ≠ Probability ≠ Frequency</p></div>
+        <div class="card"><h4>5 Harm lens</h4><p>
+          <span class="tag o">Misinformation</span><span class="tag o">Opportunity loss</span><span class="tag r">Injury</span>
+          <span class="tag o">Privacy loss</span><span class="tag o">Dignity loss</span></p></div>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section class="slide" data-title="Case 1 · CNET — Brief">
+      <div class="kicker">Case 1 · Brief Case</div>
+      <h2>CNET dùng AI viết bài tài chính (2022–2023)</h2>
+      <p class="lead"><i>Lỗi có kiểm soát của một tổ chức uy tín.</i> CNET (thuộc Red Ventures) âm thầm đăng bài explainer tài chính do "AI engine" nội bộ viết, dưới byline "CNET Money".</p>
+      <div class="grid g3">
+        <div class="card"><h4>📄 Quy mô</h4><div class="big">77</div><p>bài AI từ ~11/2022</p></div>
+        <div class="card" style="border-color:var(--high)"><h4>⚠️ Phải đính chính</h4><div class="big" style="color:#f0b496">41 / 77</div><p>~<b class="hl">53%</b> có lỗi → lỗi hệ thống</p></div>
+        <div class="card"><h4>🔁 Còn dính</h4><p><b class="hl">Đạo văn</b>: lặp câu/cấu trúc từ một bài Forbes Advisor. CNET phải <b class="hl">tạm dừng</b> tool (1/2023).</p></div>
+      </div>
+      <div class="quote" style="margin-top:16px">"…issued corrections on <b>41 of the 77 stories</b> written using an AI tool." — và ghi chú "replaced phrases that were not entirely original".</div>
+      <p class="src">Nguồn: Futurism (phá vỡ tin) · CNN Business (25/1/2023) · Washington Post (17/1/2023) · Engadget. Con số 41/77 do chính CNET thừa nhận.</p>
+    </section>
+
+    <!-- 8 -->
+    <section class="slide" data-title="Case 1 · CNET — Harm Map">
+      <div class="kicker">Case 1 · Harm Map Worksheet</div>
+      <h2>Độc giả tin bài tài chính sai</h2>
+      <table>
+        <tr><th>Yếu tố</th><th>Giá trị</th></tr>
+        <tr><td>High-risk moment</td><td>Độc giả đọc bài explainer tài chính do AI viết & <b>tin để ra quyết định tiền bạc</b></td></tr>
+        <tr><td>Stakeholder</td><td>Độc giả · biên tập/nhà báo CNET · thương hiệu CNET · tác giả bị đạo văn</td></tr>
+        <tr><td>Failure mode</td><td><span class="tag p">Hallucination</span><span class="tag p">Over-reliance</span></td></tr>
+        <tr><td>Layer bắt đầu lỗi</td><td><span class="tag g">Grounding</span><span class="tag g">UX</span> — không ground nguồn chuẩn + byline trông như chuyên gia</td></tr>
+        <tr><td>Harm lens</td><td><span class="tag o">Misinformation</span> + reputation loss</td></tr>
+        <tr><td>Chấm điểm</td><td>Severity <span class="badge b-high">High</span> · Scale <span class="badge b-high">High</span> · Probability <span class="badge b-high">High</span> · Frequency <span class="badge b-high">High</span></td></tr>
+        <tr><td>Vì sao</td><td>53% bài lỗi → mang tính hệ thống; SEO khuếch đại tới đại chúng → <b>harm by volume</b> điển hình</td></tr>
+      </table>
+    </section>
+
+    <!-- 9 -->
+    <section class="slide" data-title="Case 2 · Amazon — Brief">
+      <div class="kicker">Case 2 · Brief Case</div>
+      <h2>Amazon ngập sách AI slop (2023)</h2>
+      <p class="lead"><i>Slop ẩn danh, phi tập trung, quy mô marketplace.</i> Hai mặt của cùng làn sóng trên Kindle Direct Publishing.</p>
+      <div class="grid g2">
+        <div class="card"><h4>🎭 Mạo danh tác giả</h4><p>Tác giả thật <b class="hl">Jane Friedman</b> (không ra sách mới từ <b class="hl">2018</b>) phát hiện nhiều sách AI bán dưới tên bà; còn gắn lên Goodreads. Amazon <b class="hl">ban đầu từ chối gỡ</b> (đòi "trademark registration"), chỉ gỡ ~6 đầu sách sau backlash.</p></div>
+        <div class="card" style="border-color:var(--crit)"><h4>☠️ Guide hái nấm AI</h4><p>Sách foraging AI định danh nấm sai; New York Mycological Society cảnh báo <b style="color:#f0a3a1">"life or death"</b>; có ca <b class="hl">nhập viện</b>. Amazon phải giới hạn <b class="hl">3 sách/ngày/người</b> (9/2023).</p></div>
+      </div>
+      <p class="src">Nguồn: The Daily Beast & Gizmodo (Jane Friedman, 8/2023) · Fortune (3/9/2023) & Civil Eats (foraging) · 404 Media (phá vỡ vụ foraging) · NPR (3/2024) · Authors Guild.</p>
+    </section>
+
+    <!-- 10 -->
+    <section class="slide" data-title="Case 2 · Amazon — Harm Map">
+      <div class="kicker">Case 2 · Harm Map Worksheet</div>
+      <h2>Hai dòng harm: volume + spike Critical</h2>
+      <table>
+        <tr><th>Yếu tố</th><th>Dòng A — Mạo danh</th><th>Dòng B — Foraging</th></tr>
+        <tr><td>Moment</td><td>Mua sách AI mạo danh tác giả thật</td><td>Định danh nấm theo guide AI sai</td></tr>
+        <tr><td>Failure mode</td><td><span class="tag p">Misuse/synthetic</span><span class="tag p">Hallucination</span></td><td><span class="tag p">Hallucination</span><span class="tag p">Harmful advice</span></td></tr>
+        <tr><td>Layer</td><td><span class="tag g">UX/governance</span><span class="tag g">Safety</span></td><td><span class="tag g">Grounding</span><span class="tag g">Safety</span></td></tr>
+        <tr><td>Harm lens</td><td><span class="tag o">Dignity loss</span><span class="tag o">Opportunity loss</span></td><td><span class="tag r">Injury</span></td></tr>
+        <tr><td>Severity</td><td><span class="badge b-high">High</span></td><td><span class="badge b-crit">Critical</span></td></tr>
+        <tr><td>Scale / Prob / Freq</td><td>High / Med / High</td><td>Low–Med / Med / Low–Med</td></tr>
+        <tr><td>Vì sao</td><td>Amazon từ chối gỡ ban đầu → lỗi tầng policy/governance</td><td>1 lần sai = "life or death" → buộc Amazon rate-limit</td></tr>
+      </table>
+    </section>
+
+    <!-- 11 -->
+    <section class="slide" data-title="Pattern ngành">
+      <div class="kicker">Bước 3 · Rút pattern</div>
+      <h2>4 pattern rủi ro của ngành Content Creator</h2>
+      <div class="grid g2">
+        <div class="card"><h4>① Harm by volume</h4><p>Severity/ca thấp–trung bình nhưng <b class="hl">Scale × Frequency</b> khổng lồ (CNET 77 bài/53% lỗi; Amazon "flooded").</p></div>
+        <div class="card"><h4>② Spike Critical ở ngách</h4><p>Khi slop lấn vào sức khỏe/tài chính → 1 ca lẻ cũng <b style="color:#f0a3a1">Injury/Critical</b> (foraging → ngộ độc).</p></div>
+        <div class="card" style="border-left:3px solid var(--green)"><h4>③ Lỗi khởi từ Grounding + UX</h4><p>Không ground nguồn thật <b>+</b> giao diện làm nội dung trông "chính thống" → user <b class="hl">over-trust</b>. Combo lặp ở cả 2 case.</p></div>
+        <div class="card"><h4>④ Mode hay lặp</h4><p><span class="tag p">Hallucination</span><span class="tag p">Misuse/synthetic</span><span class="tag p">Over-reliance</span></p></div>
+      </div>
+      <p class="src" style="margin-top:14px"><b style="color:#86d6c4">Guardrail cần nhất:</b> nhãn AI/provenance · xác thực authorship · fact-check & kiểm đạo văn · rate-limit (Amazon: 3 sách/ngày) · khiếu nại/gỡ nhanh — vì không có gatekeeper tập trung.</p>
+    </section>
+
+    <!-- 12 -->
+    <section class="slide" data-title="So sánh nhóm (3 ngành)">
+      <div class="kicker">Phần nhóm · số liệu thật 3 thành viên</div>
+      <h2>Risk profile giữa các ngành</h2>
+      <table>
+        <tr><th>Ngành</th><th>Harm dễ gặp</th><th>Mode hay lặp</th><th>Layer lỗi</th><th>Risk</th><th>Đặc trưng</th></tr>
+        <tr><td><b style="color:#86d6c4">Content creator</b><br><span class="src">Đỗ Việt Anh</span></td><td>Misinfo + Dignity; spike Injury</td><td>Hallucination · Misuse · Over-reliance</td><td>Grounding+UX</td><td><span class="badge b-high">Med–High</span></td><td>harm by <b>volume</b></td></tr>
+        <tr><td><b>Y tế / health</b><br><span class="src">thành viên</span></td><td><span class="tag r">Injury</span> (tử vong)</td><td>Harmful advice · Escalation failure</td><td>Safety·Grounding·Model</td><td><span class="badge b-crit">Critical</span></td><td>harm by <b>severity</b></td></tr>
+        <tr><td><b>Media / political</b><br><span class="src">Nguyễn Viết Du</span></td><td>Misinformation + Dignity</td><td>Misuse/jailbreak (deepfake)</td><td>Safety·Grounding</td><td><span class="badge b-high">High</span></td><td>harm by <b>scale</b></td></tr>
+      </table>
+      <p class="src" style="margin-top:12px"><b style="color:#86d6c4">Case:</b> Y tế — NEDA Tessa · Epic Sepsis (sót 67%, sai 88%) · Babylon · | Media — Deepfake Biden (FCC $6M) · Slovakia (>130k view/48h) · CNET</p>
+      <div class="grid g3" style="margin-top:8px">
+        <div class="card"><h4>① Severity ⟷ Scale</h4><p>Y tế = <b class="hl">harm by severity</b> (hẹp–sâu); Content & Media = <b class="hl">harm by volume/scale</b> (rộng–nông).</p></div>
+        <div class="card"><h4>② Intent của lỗi</h4><p>Y tế <b class="hl">vô ý</b> (hệ thống) · Media <b class="hl">cố ý</b> (deepfake) · Content <b class="hl">pha trộn</b>.</p></div>
+        <div class="card"><h4>③ Layer chung</h4><p><b class="hl">Grounding</b> ở cả 3; Safety nổi ở Y tế & Media; UX khuếch đại.</p></div>
+      </div>
+    </section>
+
+    <!-- 13 -->
+    <section class="slide" data-title="Kết luận">
+      <div class="kicker">Kết luận</div>
+      <h2>Nếu là team sản phẩm, sửa gì trước?</h2>
+      <div class="grid g3">
+        <div class="card"><h4>1 · Provenance</h4><p>Gắn <b class="hl">nhãn AI</b> rõ + xác thực authorship — phá vỡ "trông chính thống" ở layer UX.</p></div>
+        <div class="card"><h4>2 · Grounding + fact-check</h4><p>Bắt buộc kiểm dữ kiện & đạo văn trước xuất bản; chặn domain nguy hiểm (sức khỏe/tài chính).</p></div>
+        <div class="card"><h4>3 · Rate-limit + gỡ nhanh</h4><p>Giới hạn tốc độ sản xuất & cơ chế khiếu nại — bù cho việc thiếu gatekeeper.</p></div>
+      </div>
+      <div class="quote" style="margin-top:20px">Content creator là ngành <b>harm by volume</b>: từng nội dung không chết người, nhưng ở quy mô Internet nó bào mòn lòng tin — và đôi khi spike thành "life or death".</div>
+      <p class="src">Nguồn đầy đủ trong README & các file <span class="pill">02-case-cnet.md</span> · <span class="pill">03-case-amazon-slop.md</span>. Tất cả số liệu verify từ nguồn primary/secondary — không dùng ChatGPT/Claude làm nguồn.</p>
+    </section>
+
+  </div>
+
+  <nav class="nav">
+    <button id="prev">← Trước</button>
+    <span class="counter"><span id="cur">1</span> / <span id="tot">13</span></span>
+    <button id="next">Tiếp →</button>
+  </nav>
+</main>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  const toc=document.getElementById('toc');
+  let i=0;
+  slides.forEach((s,idx)=>{
+    const li=document.createElement('li');
+    li.innerHTML=`<span class="num">${idx+1}</span><span>${s.dataset.title}</span>`;
+    li.onclick=()=>go(idx);
+    toc.appendChild(li);
+  });
+  const tocItems=[...toc.children];
+  document.getElementById('tot').textContent=slides.length;
+  function go(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,idx)=>s.classList.toggle('show',idx===i));
+    tocItems.forEach((t,idx)=>t.classList.toggle('active',idx===i));
+    document.getElementById('cur').textContent=i+1;
+    document.getElementById('prev').disabled=i===0;
+    document.getElementById('next').disabled=i===slides.length-1;
+    document.getElementById('bar').style.width=((i+1)/slides.length*100)+'%';
+    tocItems[i].scrollIntoView({block:'nearest'});
+    document.querySelector('.slidewrap').scrollTop=0;
+  }
+  document.getElementById('prev').onclick=()=>go(i-1);
+  document.getElementById('next').onclick=()=>go(i+1);
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' ')go(i+1);
+    if(e.key==='ArrowLeft')go(i-1);
+  });
+  go(0);
+</script>
+</body>
+</html>
